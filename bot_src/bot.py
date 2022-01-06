@@ -154,26 +154,28 @@ async def reset(ctx, name: str):
 
 # COMMAND .B. THIS DMs THE USER THEIR BALANCE
 @bot.command(
-    # ADDS THIS VALUE TO THE .HELP PRINT MESSAGE.
     help="DMs the balance",
-    # ADDS THIS VALUE TO THE .HELP MESSAGE.
     brief="DMs the balance"
 )
 async def b(ctx):
-    name = ctx.author.nick
-    lower_name = name.lower()
+    # first try to get the user nickname
     try:
-        bal = db.fetch_user_balance(user_name=lower_name)
-        await ctx.author.send(f"your balance is: {bal}")
+        # fetch user balance based on the lowercase nickname
+        name = ctx.author.nick
+        lower_name = name.lower()
+        try:
+            bal = db.fetch_user_balance(user_name=lower_name)
+            await ctx.author.send(f"your balance is: {bal}")
+        except AttributeError:
+            await ctx.author.send(f"user: {name} does not exist!")
+    # if we cant fetch the nickname then its pretty much gg
     except AttributeError:
-        await ctx.author.send(f"user: {name} does not exist!")
+        await ctx.author.send(f"could not acquire nickname.")
 
 
 # COMMAND .PRINT. THIS TAKES AN IN A LIST OF ARGUMENTS FROM THE USER AND SIMPLY PRINTS THE VALUES BACK TO THE CHANNEL.
 @bot.command(
-    # ADDS THIS VALUE TO THE .HELP PRINT MESSAGE.
-    help="Looks like you need some help.",
-    # ADDS THIS VALUE TO THE .HELP MESSAGE.
+    help="print arg1 arg2 ...",
     brief="Prints the list of values back to the channel."
 )
 async def print(ctx, *args):
@@ -189,9 +191,7 @@ async def print(ctx, *args):
 
 # COMMAND .CUT. calcs cut
 @bot.command(
-    # ADDS THIS VALUE TO THE .HELP PRINT MESSAGE.
     help=".cut {total balance to cut ex: 1000} {list of percentages ex: 70 20 10}",
-    # ADDS THIS VALUE TO THE .HELP MESSAGE.
     brief="Calculates respective cuts based on percentages given"
 )
 async def cut(ctx, *args):
@@ -224,9 +224,7 @@ async def cut(ctx, *args):
 
 # COMMAND .divide. divide a number by another
 @bot.command(
-    # ADDS THIS VALUE TO THE .HELP PRINT MESSAGE.
     help=".divide num1 num2, ex: .divide 6000 12",
-    # ADDS THIS VALUE TO THE .HELP MESSAGE.
     brief="divides two numbers"
 )
 async def divide(ctx, *args):
