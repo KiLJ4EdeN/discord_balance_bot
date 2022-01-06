@@ -3,6 +3,7 @@ main crap for the bot
 """
 # bot.py
 
+import numpy as np
 # IMPORT THE OS MODULE.
 import os
 
@@ -75,6 +76,41 @@ async def b(ctx):
     response = f"Your Balance is ... \n{ctx.author}"
     # SENDS A MESSAGE TO THE CHANNEL USING THE CONTEXT OBJECT.
     await ctx.author.send(response)
+
+
+# COMMAND .CUT. THIS DMs THE USER THEIR BALANCE
+@bot.command(
+    # ADDS THIS VALUE TO THE .HELP PRINT MESSAGE.
+    help=".cut {list of percentages ex: 70 20 10} {total balance to cut ex: 1000}",
+    # ADDS THIS VALUE TO THE .HELP MESSAGE.
+    brief="Calculates respective cuts based on percentages given"
+)
+async def cut(ctx, *args):
+    # check zero args
+    if len(args) == 0:
+        response = "you must provide at least two arguments to .cut !"
+        await ctx.author.send(response)
+    elif len(args) == 1:
+        response = "you must provide at least two arguments to .cut !"
+        await ctx.author.send(response)
+    else:
+        response = ""
+        # LOOPS THROUGH THE LIST OF ARGUMENTS THAT THE USER INPUTS.
+        try:
+            total_money = float(args[-1])
+            sum = 0
+            for arg in args[:-1]:
+                cut = int(total_money * (float(arg) / 100.))
+                response += f"cut for {arg} is: {cut}\n"
+                sum += float(arg)
+            if int(sum) != 100:
+                response = "arguments must sum up to 100% !"
+                await ctx.author.send(response)
+            else:
+                await ctx.author.send(response)
+        except ValueError:
+            response = "arguments to .cut ! MUST be numbers"
+            await ctx.author.send(response)
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
 bot.run(DISCORD_TOKEN)

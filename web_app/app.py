@@ -23,6 +23,18 @@ class User(db.Model):
         self.password = password
 
 
+# what a discord user must have
+class DiscordUser(db.Model):
+    """ Create user table"""
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True)
+    balance = db.Column(db.Float(80))
+
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """ Session control"""
