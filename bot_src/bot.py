@@ -78,10 +78,10 @@ async def b(ctx):
     await ctx.author.send(response)
 
 
-# COMMAND .CUT. THIS DMs THE USER THEIR BALANCE
+# COMMAND .CUT. calcs cut
 @bot.command(
     # ADDS THIS VALUE TO THE .HELP PRINT MESSAGE.
-    help=".cut {list of percentages ex: 70 20 10} {total balance to cut ex: 1000}",
+    help=".cut {total balance to cut ex: 1000} {list of percentages ex: 70 20 10}",
     # ADDS THIS VALUE TO THE .HELP MESSAGE.
     brief="Calculates respective cuts based on percentages given"
 )
@@ -97,9 +97,9 @@ async def cut(ctx, *args):
         response = ""
         # LOOPS THROUGH THE LIST OF ARGUMENTS THAT THE USER INPUTS.
         try:
-            total_money = float(args[-1])
+            total_money = float(args[0])
             sum = 0
-            for arg in args[:-1]:
+            for arg in args[1:]:
                 cut = int(total_money * (float(arg) / 100.))
                 response += f"cut for {arg} is: {cut}\n"
                 sum += float(arg)
@@ -110,6 +110,37 @@ async def cut(ctx, *args):
                 await ctx.author.send(response)
         except ValueError:
             response = "arguments to .cut ! MUST be numbers"
+            await ctx.author.send(response)
+
+# COMMAND .divide. divide a number by another
+@bot.command(
+    # ADDS THIS VALUE TO THE .HELP PRINT MESSAGE.
+    help=".divide num1 num2, ex: .divide 6000 12",
+    # ADDS THIS VALUE TO THE .HELP MESSAGE.
+    brief="divides two numbers"
+)
+async def divide(ctx, *args):
+    # check zero args
+    if len(args) == 0:
+        response = "you must provide at least two arguments to .divide !"
+        await ctx.author.send(response)
+    elif len(args) == 1:
+        response = "you must provide at least two arguments to .divide !"
+        await ctx.author.send(response)
+    else:
+        response = ""
+        # LOOPS THROUGH THE LIST OF ARGUMENTS THAT THE USER INPUTS.
+        try:
+            total_money = float(args[0])
+            division = float(args[1])
+            if total_money <= division:
+                response = "first argument must be bigger than the second one!"
+                await ctx.author.send(response)
+            else:
+                response += f"division is {int(total_money / division)}\n"
+                await ctx.author.send(response)
+        except ValueError:
+            response = "arguments to .divide ! MUST be numbers"
             await ctx.author.send(response)
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
