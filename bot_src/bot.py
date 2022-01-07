@@ -129,7 +129,7 @@ async def add(ctx, user: discord.User, value: float):
         try:
             bal = db.fetch_user_balance(user_name=user_id)
             db.update_user_balance(user_name=user_id, value=bal+value)
-            await ctx.author.send(f"user: {user.name} balance increased from {bal} to {bal+value}")
+            await ctx.author.send(f"user: {user.name} balance increased from {int(bal)} to {int(bal+value)}")
         except AttributeError:
             await ctx.author.send(f"user: {user.name} does not exist!")
 
@@ -147,7 +147,7 @@ async def deduct(ctx, user: discord.User, value: float):
         try:
             bal = db.fetch_user_balance(user_name=user_id)
             db.update_user_balance(user_name=user_id, value=bal-value)
-            await ctx.author.send(f"user: {user.name} balance decreased from {bal} to {bal-value}")
+            await ctx.author.send(f"user: {user.name} balance decreased from {int(bal)} to {int(bal-value)}")
         except AttributeError:
             await ctx.author.send(f"user: {user.name} does not exist!")
 
@@ -165,7 +165,7 @@ async def reset(ctx, user: discord.User):
         try:
             bal = db.fetch_user_balance(user_name=user_id)
             db.update_user_balance(user_name=user_id, value=0)
-            await ctx.author.send(f"user: {user.name} balance reset from {bal} to 0")
+            await ctx.author.send(f"user: {user.name} balance reset from {int(bal)} to 0")
         except AttributeError:
             await ctx.author.send(f"user: {user.name} does not exist!")
 
