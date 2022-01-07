@@ -2,7 +2,7 @@
 main crap for the bot
 """
 # bot.py
-
+import discord
 import numpy as np
 # IMPORT THE OS MODULE.
 import os
@@ -35,7 +35,7 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 bot = commands.Bot(command_prefix=".")
 
 # Initiate the database
-db = SQLiteDatabase(initiate=False)
+db = SQLiteDatabase(initiate=True)
 
 
 # ON_MESSAGE() EVENT LISTENER. NOTICE IT IS USING @BOT.EVENT AS OPPOSED TO @BOT.COMMAND().
@@ -84,18 +84,36 @@ async def is_admin(ctx):
     help="usage: .adduser Insane-Kazzak",
     brief="adds a user to the database with 0 balance"
 )
-async def adduser(ctx, name: str):
+async def adduser(ctx, user: discord.User):
     if not ctx.message.author.guild_permissions.administrator:
         await ctx.author.send(f"You don't have the privileges for this command!")
     else:
-        lower_name = name.lower()
+        user_id = str(user.id)
         try:
-            db.fetch_user_balance(user_name=lower_name)
-            await ctx.author.send(f"user: {name} is already registered! skipping...")
+            db.fetch_user_balance(user_name=user_id)
+            await ctx.author.send(f"user: {user.name} is already registered! skipping...")
         except AttributeError:
-            db.insert_users(user_list=[{'name': lower_name, 'balance': 0},
+            db.insert_users(user_list=[{'name': user_id, 'balance': 0},
                                        ])
-            await ctx.author.send(f"user: {name} successfully created!")
+            await ctx.author.send(f"user: {user.name} successfully created!")
+
+
+# COMMAND .removeuser, adds a user to the database using their nickname
+@bot.command(
+    help="usage: .remuser Insane-Kazzak",
+    brief="adds a user to the database with 0 balance"
+)
+async def removeuser(ctx, user: discord.User):
+    if not ctx.message.author.guild_permissions.administrator:
+        await ctx.author.send(f"You don't have the privileges for this command!")
+    else:
+        user_id = str(user.id)
+        try:
+            db.fetch_user_balance(user_name=user_id)
+            db.drop_user(user_name=user_id)
+            await ctx.author.send(f"user: {user.name} successfully deleted.")
+        except AttributeError:
+            await ctx.author.send(f"user: {user.name} does not exist!")
 
 
 # COMMAND .add, add balance for a user
@@ -103,17 +121,17 @@ async def adduser(ctx, name: str):
     help="usage: .add Insane-Kazzak 1000",
     brief="adds balance for a user"
 )
-async def add(ctx, name: str, value: float):
+async def add(ctx, user: discord.User, value: float):
     if not ctx.message.author.guild_permissions.administrator:
         await ctx.author.send(f"You don't have the privileges for this command!")
     else:
-        lower_name = name.lower()
+        user_id = str(user.id)
         try:
-            bal = db.fetch_user_balance(user_name=lower_name)
-            db.update_user_balance(user_name=lower_name, value=bal+value)
-            await ctx.author.send(f"user: {name} balance increased from {bal} to {bal+value}")
+            bal = db.fetch_user_balance(user_name=user_id)
+            db.update_user_balance(user_name=user_id, value=bal+value)
+            await ctx.author.send(f"user: {user.name} balance increased from {bal} to {bal+value}")
         except AttributeError:
-            await ctx.author.send(f"user: {name} does not exist!")
+            await ctx.author.send(f"user: {user.name} does not exist!")
 
 
 # COMMAND .deduct, lower balance of a user
@@ -121,17 +139,17 @@ async def add(ctx, name: str, value: float):
     help="usage: .deduct Insane-Kazzak 1000",
     brief="lower balance of a user"
 )
-async def deduct(ctx, name: str, value: float):
+async def deduct(ctx, user: discord.User, value: float):
     if not ctx.message.author.guild_permissions.administrator:
         await ctx.author.send(f"You don't have the privileges for this command!")
     else:
-        lower_name = name.lower()
+        user_id = str(user.id)
         try:
-            bal = db.fetch_user_balance(user_name=lower_name)
-            db.update_user_balance(user_name=lower_name, value=bal-value)
-            await ctx.author.send(f"user: {name} balance decreased from {bal} to {bal-value}")
+            bal = db.fetch_user_balance(user_name=user_id)
+            db.update_user_balance(user_name=user_id, value=bal-value)
+            await ctx.author.send(f"user: {user.name} balance decreased from {bal} to {bal-value}")
         except AttributeError:
-            await ctx.author.send(f"user: {name} does not exist!")
+            await ctx.author.send(f"user: {user.name} does not exist!")
 
 
 # COMMAND .reset, resets balance of a user
@@ -139,17 +157,17 @@ async def deduct(ctx, name: str, value: float):
     help="usage: .reset Insane-Kazzak",
     brief="resets balance of a user"
 )
-async def reset(ctx, name: str):
+async def reset(ctx, user: discord.User):
     if not ctx.message.author.guild_permissions.administrator:
         await ctx.author.send(f"You don't have the privileges for this command!")
     else:
-        lower_name = name.lower()
+        user_id = str(user.id)
         try:
-            bal = db.fetch_user_balance(user_name=lower_name)
-            db.update_user_balance(user_name=lower_name, value=0)
-            await ctx.author.send(f"user: {name} balance reset from {bal} to 0")
+            bal = db.fetch_user_balance(user_name=user_id)
+            db.update_user_balance(user_name=user_id, value=0)
+            await ctx.author.send(f"user: {user.name} balance reset from {bal} to 0")
         except AttributeError:
-            await ctx.author.send(f"user: {name} does not exist!")
+            await ctx.author.send(f"user: {user.name} does not exist!")
 
 
 # COMMAND .B. THIS DMs THE USER THEIR BALANCE
@@ -160,14 +178,13 @@ async def reset(ctx, name: str):
 async def b(ctx):
     # first try to get the user nickname
     try:
-        # fetch user balance based on the lowercase nickname
-        name = ctx.author.nick
-        lower_name = name.lower()
+        # fetch user balance based on ID
+        user_id = str(ctx.author.id)
         try:
-            bal = db.fetch_user_balance(user_name=lower_name)
-            await ctx.author.send(f"your balance is: {bal}")
+            bal = db.fetch_user_balance(user_name=user_id)
+            await ctx.author.send(f"your balance is: {int(bal)}")
         except AttributeError:
-            await ctx.author.send(f"user: {name} does not exist!")
+            await ctx.author.send(f"user: {ctx.author} does not exist in the database!")
     # if we cant fetch the nickname then its pretty much gg
     except AttributeError:
         await ctx.author.send(f"could not acquire nickname.")

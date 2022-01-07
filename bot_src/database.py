@@ -13,6 +13,8 @@ class SQLiteDatabase(object):
         self.engine = create_engine(db_path, echo=True)
         self.conn = self.engine.connect()
         self.meta = MetaData()
+        # TODO: name is becoming id here, so we need discord_Id and username fields separately now
+        # TODO: so that we can show them on ui
         self.discord_users = Table(
             'discord_users', self.meta,
             Column('id', Integer, primary_key=True),
@@ -83,23 +85,37 @@ class SQLiteDatabase(object):
         self.conn.execute(cmd)
         return
 
+    def drop_user(self, user_name):
+        """
+        DELETE FROM discord_users WHERE discord_users.name = ?
+        ('KiLJ4EdeN',)
+        :return: None
+        """
+        cmd = self.discord_users.delete().where(self.discord_users.c.name == user_name)
+        result = self.conn.execute(cmd)
+        return
 
-if __name__ == '__main__':
-    db = SQLiteDatabase(initiate=True)
-    # insertion
-    db.insert_users(user_list=[{'name':'KiLJ4EdeN', 'balance': 1000},
-                               {'name':'Insane', 'balance': 1111},
-                               {'name':'Rippah', 'balance': 0},
-                               {'name':'mr np', 'balance': 40000000},
-                               ])
+
+# if __name__ == '__main__':
+#     db = SQLiteDatabase(initiate=True)
+#     # insertion
+#     db.insert_users(user_list=[{'name':'KiLJ4EdeN', 'balance': 1000},
+#                                {'name':'Insane', 'balance': 1111},
+#                                {'name':'Rippah', 'balance': 0},
+#                                {'name':'mr np', 'balance': 40000000},
+#                                ])
     # fetching all
     # res = db.fetch_all()
     # for row in res:
     #     print(row)
     # fetchone
-    bal = db.fetch_user_balance(user_name='KiLJ4EdeN')
-    print(bal)
+    # bal = db.fetch_user_balance(user_name='KiLJ4EdeN')
+    # print(bal)
     # updates
-    db.update_user_balance(user_name='KiLJ4EdeN', value=0)
-    bal = db.fetch_user_balance(user_name='KiLJ4EdeN')
-    print(bal)
+    # db.update_user_balance(user_name='KiLJ4EdeN', value=0)
+    # bal = db.fetch_user_balance(user_name='KiLJ4EdeN')
+    # print(bal)
+    # dropping
+    # db.drop_user(user_name='KiLJ4EdeN')
+    # bal = db.fetch_user_balance(user_name='KiLJ4EdeN')
+    # print(bal)
