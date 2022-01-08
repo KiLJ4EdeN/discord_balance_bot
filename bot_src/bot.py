@@ -19,6 +19,9 @@ from database import SQLiteDatabase
 # LOGGING
 import logging
 
+# for python code running
+import ast
+
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
@@ -49,107 +52,92 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-# COMMAND .PING. INVOKES ONLY WHEN THE MESSAGE ".PING" IS SEND IN THE DISCORD SERVER.
-# ALTERNATIVELY @BOT.COMMAND(NAME="PING") CAN BE USED IF ANOTHER FUNCTION NAME IS DESIRED.
 @bot.command(
-    help="Uses come crazy logic to determine if pong is actually the correct value or not.",
-    brief="Prints pong back to the channel."
+    help="get all user balances",
+    brief="get all user balances"
 )
-async def ping(ctx):
-    # SENDS A MESSAGE TO THE CHANNEL USING THE CONTEXT OBJECT.
-    await ctx.channel.send("pong")
-
-
-@bot.command(
-    help="prints guild members",
-    brief="prints guild members"
-)
-async def get_members(ctx):
-    response = ''
-    for member in ctx.message.guild.members:
-        response += member.name + '\n'
-    await ctx.author.send(response)
-
-
-@bot.command(
-    help="is a user admin",
-    brief="is a user admin"
-)
-async def is_admin(ctx):
-    await ctx.author.send(f"{ctx.message.author.guild_permissions.administrator}")
+async def fetchall(ctx):
+    if not ctx.message.author.guild_permissions.administrator:
+        await ctx.author.send(f"You don't have the privileges for this command!")
+    else:
+        response = ""
+        res = db.fetch_all()
+        for row in res:
+            name = row.name
+            bal = row.balance
+            # change username to nickname
+            # user = await bot.fetch_user(int(user_id))
+            response += f'{name} balance is {int(bal)}\n'
+        await ctx.author.send(response)
 
 
 # COMMAND .adduser, adds a user to the database using their nickname
 @bot.command(
-    help="usage: .adduser Insane-Kazzak",
+    help="usage: .adduser @Insane-Kazzak",
     brief="adds a user to the database with 0 balance"
 )
 async def adduser(ctx, user: discord.User):
     if not ctx.message.author.guild_permissions.administrator:
         await ctx.author.send(f"You don't have the privileges for this command!")
     else:
-        user_id = str(user.id)
         try:
-            db.fetch_user_balance(user_name=user_id)
-            await ctx.author.send(f"user: {user.name} is already registered! skipping...")
+            db.fetch_user_balance(user_id=user.id)
+            await ctx.author.send(f"user: {user.display_name} is already registered! skipping...")
         except AttributeError:
-            db.insert_users(user_list=[{'name': user_id, 'balance': 0},
+            db.insert_users(user_list=[{'uid': user.id, 'name': user.display_name, 'balance': 0},
                                        ])
-            await ctx.author.send(f"user: {user.name} successfully created!")
+            await ctx.author.send(f"user: {user.display_name} successfully created!")
 
 
 # COMMAND .removeuser, adds a user to the database using their nickname
 @bot.command(
-    help="usage: .remuser Insane-Kazzak",
+    help="usage: .remuser @Insane-Kazzak",
     brief="adds a user to the database with 0 balance"
 )
 async def removeuser(ctx, user: discord.User):
     if not ctx.message.author.guild_permissions.administrator:
         await ctx.author.send(f"You don't have the privileges for this command!")
     else:
-        user_id = str(user.id)
         try:
-            db.fetch_user_balance(user_name=user_id)
-            db.drop_user(user_name=user_id)
-            await ctx.author.send(f"user: {user.name} successfully deleted.")
+            db.fetch_user_balance(user_id=user.id)
+            db.drop_user(user_id=user.id)
+            await ctx.author.send(f"user: {user.display_name} successfully deleted.")
         except AttributeError:
-            await ctx.author.send(f"user: {user.name} does not exist!")
+            await ctx.author.send(f"user: {user.display_name} does not exist!")
 
 
 # COMMAND .add, add balance for a user
 @bot.command(
-    help="usage: .add Insane-Kazzak 1000",
+    help="usage: .add @Insane-Kazzak 1000",
     brief="adds balance for a user"
 )
 async def add(ctx, user: discord.User, value: float):
     if not ctx.message.author.guild_permissions.administrator:
         await ctx.author.send(f"You don't have the privileges for this command!")
     else:
-        user_id = str(user.id)
         try:
-            bal = db.fetch_user_balance(user_name=user_id)
-            db.update_user_balance(user_name=user_id, value=bal+value)
-            await ctx.author.send(f"user: {user.name} balance increased from {int(bal)} to {int(bal+value)}")
+            bal = db.fetch_user_balance(user_id=user.id)
+            db.update_user_balance(user_id=user.id, value=bal+value)
+            await ctx.author.send(f"user: {user.display_name} balance increased from {int(bal)} to {int(bal+value)}")
         except AttributeError:
-            await ctx.author.send(f"user: {user.name} does not exist!")
+            await ctx.author.send(f"user: {user.display_name} does not exist!")
 
 
 # COMMAND .deduct, lower balance of a user
 @bot.command(
-    help="usage: .deduct Insane-Kazzak 1000",
-    brief="lower balance of a user"
+    help="usage: .deduct @Insane-Kazzak 1000",
+    brief="lowers balance of a user"
 )
 async def deduct(ctx, user: discord.User, value: float):
     if not ctx.message.author.guild_permissions.administrator:
         await ctx.author.send(f"You don't have the privileges for this command!")
     else:
-        user_id = str(user.id)
         try:
-            bal = db.fetch_user_balance(user_name=user_id)
-            db.update_user_balance(user_name=user_id, value=bal-value)
-            await ctx.author.send(f"user: {user.name} balance decreased from {int(bal)} to {int(bal-value)}")
+            bal = db.fetch_user_balance(user_id=user.id)
+            db.update_user_balance(user_id=user.id, value=bal-value)
+            await ctx.author.send(f"user: {user.display_name} balance decreased from {int(bal)} to {int(bal-value)}")
         except AttributeError:
-            await ctx.author.send(f"user: {user.name} does not exist!")
+            await ctx.author.send(f"user: {user.display_name} does not exist!")
 
 
 # COMMAND .reset, resets balance of a user
@@ -161,13 +149,12 @@ async def reset(ctx, user: discord.User):
     if not ctx.message.author.guild_permissions.administrator:
         await ctx.author.send(f"You don't have the privileges for this command!")
     else:
-        user_id = str(user.id)
         try:
-            bal = db.fetch_user_balance(user_name=user_id)
-            db.update_user_balance(user_name=user_id, value=0)
-            await ctx.author.send(f"user: {user.name} balance reset from {int(bal)} to 0")
+            bal = db.fetch_user_balance(user_id=user.id)
+            db.update_user_balance(user_id=user.id, value=0)
+            await ctx.author.send(f"user: {user.display_name} balance reset from {int(bal)} to 0")
         except AttributeError:
-            await ctx.author.send(f"user: {user.name} does not exist!")
+            await ctx.author.send(f"user: {user.display_name} does not exist!")
 
 
 # COMMAND .B. THIS DMs THE USER THEIR BALANCE
@@ -176,15 +163,13 @@ async def reset(ctx, user: discord.User):
     brief="DMs the balance"
 )
 async def b(ctx):
-    # first try to get the user nickname
     try:
         # fetch user balance based on ID
-        user_id = str(ctx.author.id)
         try:
-            bal = db.fetch_user_balance(user_name=user_id)
+            bal = db.fetch_user_balance(user_id=ctx.author.id)
             await ctx.author.send(f"your balance is: {int(bal)}")
         except AttributeError:
-            await ctx.author.send(f"user: {ctx.author} does not exist in the database!")
+            await ctx.author.send(f"user: {ctx.author.nick} does not exist in the database!")
     # if we cant fetch the nickname then its pretty much gg
     except AttributeError:
         await ctx.author.send(f"could not acquire nickname.")
@@ -270,6 +255,87 @@ async def divide(ctx, *args):
         except ValueError:
             response = "arguments to .divide ! MUST be numbers"
             await ctx.author.send(response)
+
+
+# COMMAND .PING. INVOKES ONLY WHEN THE MESSAGE ".PING" IS SEND IN THE DISCORD SERVER.
+# ALTERNATIVELY @BOT.COMMAND(NAME="PING") CAN BE USED IF ANOTHER FUNCTION NAME IS DESIRED.
+@bot.command(
+    help="Uses come crazy logic to determine if pong is actually the correct value or not.",
+    brief="Prints pong back to the channel."
+)
+async def ping(ctx):
+    # SENDS A MESSAGE TO THE CHANNEL USING THE CONTEXT OBJECT.
+    await ctx.channel.send("pong")
+
+
+@bot.command(
+    help="prints guild members",
+    brief="prints guild members"
+)
+async def get_members(ctx):
+    response = ''
+    for member in ctx.message.guild.members:
+        response += member.name + '\n'
+    await ctx.author.send(response)
+
+
+@bot.command(
+    help="is a user admin",
+    brief="is a user admin"
+)
+async def is_admin(ctx):
+    await ctx.author.send(f"{ctx.message.author.guild_permissions.administrator}")
+
+
+def insert_returns(body):
+    # insert return stmt if the last expression is a expression statement
+    if isinstance(body[-1], ast.Expr):
+        body[-1] = ast.Return(body[-1].value)
+        ast.fix_missing_locations(body[-1])
+
+    # for if statements, we insert returns into the body and the orelse
+    if isinstance(body[-1], ast.If):
+        insert_returns(body[-1].body)
+        insert_returns(body[-1].orelse)
+
+    # for with blocks, again we insert returns into the body
+    if isinstance(body[-1], ast.With):
+        insert_returns(body[-1].body)
+
+
+# runs python in the bot
+@bot.command()
+async def python(ctx, *, cmd):
+    if not ctx.message.author.guild_permissions.administrator:
+        await ctx.author.send(f"You don't have the privileges for this command!")
+    else:
+        fn_name = "_eval_expr"
+
+        cmd = cmd.strip("` ")
+
+        # add a layer of indentation
+        cmd = "\n".join(f"    {i}" for i in cmd.splitlines())
+
+        # wrap in async def body
+        body = f"async def {fn_name}():\n{cmd}"
+
+        parsed = ast.parse(body)
+        body = parsed.body[0].body
+
+        insert_returns(body)
+
+        env = {
+            'bot': ctx.bot,
+            'discord': discord,
+            'commands': commands,
+            'ctx': ctx,
+            '__import__': __import__
+        }
+        exec(compile(parsed, filename="<ast>", mode="exec"), env)
+
+        result = (await eval(f"{fn_name}()", env))
+        await ctx.send(result)
+
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
 bot.run(DISCORD_TOKEN)
